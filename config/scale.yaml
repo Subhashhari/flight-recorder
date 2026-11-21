@@ -1,0 +1,8 @@
+A_lite:                      # Plan A
+  eval:     {qa: 30, unanswerable: 10, action: 20, multi: 20}     # 80 cases
+  chaos_cases_per_fault: 20                                        # 160 runs
+  repeatability: {cases: 20, repeats: 5}
+B_sprint:                    # Plan B
+  eval:     {qa: 15, unanswerable: 5, action: 10, multi: 10}      # 40 cases
+  chaos_cases_per_fault: 6                                         # 48 runs
+  repeatability: {cases: 8, repeats: 3}

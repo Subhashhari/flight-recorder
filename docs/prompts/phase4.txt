@@ -1,0 +1,1 @@
+Read docs/GUIDE.md sections 6.4 and 7.4-7.5. Implement faults and chaos, the chaos matrix, the v2 hardening changes exactly as listed, the showcase command, and the diff command. Run a 5-run smoke chaos (label smoke-chaos). Commit, update PROGRESS.md, stop. (I will start the full chaos runs myself.)

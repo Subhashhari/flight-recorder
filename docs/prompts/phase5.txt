@@ -1,0 +1,1 @@
+Read docs/GUIDE.md sections 6.5 and 9.1. Implement the FastAPI routes and the 3-page UI with API mode and static mode, export-static, export-traces and import. Run the Gate. Commit, update PROGRESS.md, stop.

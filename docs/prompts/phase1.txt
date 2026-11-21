@@ -1,0 +1,1 @@
+Read docs/GUIDE.md section 6.1 and 7.1. Implement Phase 1 completely, including check-facts and review-cases CLIs and gen_eval_cases.py. Generate corpus and eval-case candidates using the judge model through the limiter. Run the Gate, commit, update PROGRESS.md, stop.

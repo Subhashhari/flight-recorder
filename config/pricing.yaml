@@ -1,0 +1,11 @@
+# List prices, USD per 1M tokens, Gemini Developer API paid tier, "Standard", text.
+# Source: https://aistudio.google.com/docs/pricing (redirect target of ai.google.dev/gemini-api/docs/pricing), read 2026-11-21.
+# The page announces price changes for some models from 2026-12-01 and 2027-01-01; re-check before quoting costs.
+# This project runs on the FREE tier: every cost figure is a "list-price equivalent"; actual spend is Rs 0.
+# Keys are matched against model IDs exactly, else by the longest key that is a prefix of the ID.
+gemini-3.5-flash-lite: {input: 0.30, output: 2.50}
+gemini-3.1-flash-lite: {input: 0.25, output: 1.50}
+gemini-embedding-001:  {input: 0.15, output: 0.0}
+gemini-embedding-2:    {input: 0.20, output: 0.0}
+# Gemma 4 is free-tier only on the Gemini API (paid tier "Not available"): no list price exists, recorded as 0.0.
+gemma-4:               {input: 0.0, output: 0.0}

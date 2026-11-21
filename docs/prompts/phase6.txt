@@ -1,0 +1,1 @@
+Read docs/GUIDE.md sections 6.6, 9, 10. Create Dockerfile, CI and Pages workflows, README, docs/ files from real results in docs/results.md (never invent), and run the fresh-clone test of `make demo`. Commit, update PROGRESS.md, stop.

@@ -1,0 +1,1 @@
+Read docs/GUIDE.md section 6.3 and 7.3. Implement replay, branch, repeatability, replay-check, overhead stats, and tests. Run the Gate. Commit, update PROGRESS.md, stop.

@@ -1,0 +1,15 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment: {POSTGRES_USER: flightrec, POSTGRES_PASSWORD: flightrec, POSTGRES_DB: flightrec}
+    ports: ["127.0.0.1:${FLIGHTREC_DB_PORT:-5432}:5432"]   # set FLIGHTREC_DB_PORT in .env if 5432 is taken
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+  app:
+    build: .
+    profiles: ["app"]
+    env_file: .env
+    environment: {DATABASE_URL: "postgresql+psycopg://flightrec:flightrec@db:5432/flightrec"}
+    depends_on: [db]
+    ports: ["127.0.0.1:8000:8000"]
+volumes:
+  pgdata:

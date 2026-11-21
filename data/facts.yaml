@@ -1,0 +1,16 @@
+# Single source of truth for every number in the corpus (synthetic company "Northwind Labs").
+leave: {casual_per_year: 12, sick_per_year: 10, earned_per_year: 18, earned_accrual_per_month: 1.5, earned_carry_forward_max: 30, sick_cert_after_days: 3}
+remote_work: {max_wfh_days_per_week: 3, core_hours_ist: "11:00-16:00", approval: "line manager"}
+it_security: {password_min_chars: 14, mfa: "mandatory", phishing_report_within_hours: 1, screen_lock_minutes: 5}
+devices: {laptop_refresh_months: 36, loss_report_within_hours: 24}
+escalation: {p1_response_minutes: 15, p2_response_hours: 4, p3_response_days: 2}
+expense_limits_inr_per_day:
+  meals:     {L1: 800,  L2: 1000, L3: 1500, L4: 2500,  L5: 4000}
+  lodging:   {L1: 4000, L2: 5000, L3: 7000, L4: 10000, L5: 15000}
+  travel:    {L1: 3000, L2: 4000, L3: 6000, L4: 9000,  L5: 15000}
+  equipment: {L1: 5000, L2: 5000, L3: 10000, L4: 15000, L5: 25000}
+holidays_2027: ["2027-01-01 New Year's Day", "2027-01-26 Republic Day", "2027-03-22 Holi", "2027-04-02 Good Friday", "2027-05-01 Labour Day", "2027-08-15 Independence Day", "2027-09-04 Ganesh Chaturthi", "2027-10-02 Gandhi Jayanti", "2027-10-20 Dussehra", "2027-11-08 Diwali", "2027-11-09 Diwali (day 2)", "2027-11-24 Guru Nanak Jayanti", "2027-12-25 Christmas", "2027-12-31 Year-end shutdown"]
+onboarding: {laptop_issued_on_day: 1, buddy_assigned: true, probation_months: 6, orientation_days: 2}
+data_handling: {levels: ["Public", "Internal", "Confidential", "Restricted"], restricted_requires: "encryption at rest and manager approval", retention_years_default: 3}
+travel: {advance_booking_days: 7, economy_below_hours: 6, hotel_cap_source: "expense_limits"}
+code_of_conduct: {harassment_report_within_days: 30, gift_limit_inr: 2000, conflicts_disclosure: "mandatory"}

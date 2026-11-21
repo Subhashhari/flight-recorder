@@ -1,0 +1,5 @@
+Read docs/GUIDE.md sections 1, 5, 6.0 and 7. Do Phase 0 exactly:
+1) Create the uv project, install dependencies (6.0.1), create docker-compose.yml (db service only), Makefile, ruff and pytest config.
+2) Write scripts/model_probe.py per 6.0.3, run it, and write the chosen AGENT_MODEL, JUDGE_MODEL, EMBED_MODEL and SCALE_TIER into .env (edit values in place; never print the file) and config/limits.yaml and config/scale.yaml.
+3) Write the ADK spike (6.0.4), run it, record answers (a)-(g) with real outputs in docs/architecture.md under "ADK facts".
+4) Run the Gate. Commit. Update PROGRESS.md. Stop.

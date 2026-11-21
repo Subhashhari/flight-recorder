@@ -1,0 +1,6 @@
+# AI Studio rate-limit page, read 2026-11-18. tpm in tokens/minute.
+# Real model IDs are written here by scripts/model_probe.py (Phase 0). The limiter refuses any model not listed.
+# fake-* models are local test doubles (no network, no quota); runs using them are never exported or reported.
+fake-agent: {rpm: 100000, tpm: 100000000, rpd: 100000000}
+fake-judge: {rpm: 100000, tpm: 100000000, rpd: 100000000}
+fake-embed: {rpm: 100000, tpm: 100000000, rpd: 100000000}
