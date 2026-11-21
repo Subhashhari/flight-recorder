@@ -7,6 +7,9 @@ or model changes.**
 - **Live demo (static, read-only):** https://subhashhari.github.io/flight-recorder/
 - **Demo video:** _coming soon_
 - **Results:** [`docs/results.md`](docs/results.md) (every number there is produced by a command shown next to it)
+- **New to agents, RAG or evals?** [`docs/explained/`](docs/explained/README.md) explains the whole project from zero:
+  motivation, architecture, how replay works, chaos, evaluation, every design decision and its alternatives, the
+  bugs we hit, and interview preparation.
 
 Built on the Gemini API free tier (and Gemma if used). Costs are list-price equivalents; actual spend ₹0.
 
