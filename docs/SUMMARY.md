@@ -71,7 +71,7 @@ Vite + recharts · Docker / Docker Compose · GitHub Actions (CI + Pages) · uv 
 
 - 5 agents, 4 tools, 12 policy documents, 40 synthetic employees, 8 fault types, 24 CLI commands, 3 UI pages
 - Rate limiter covering requests/minute, tokens/minute and requests/day, with pause and resume across quota days
-- 41 automated tests: 39 run offline through the real ADK framework with a scripted fake model, and 2 are database
+- 43 automated tests: 41 run offline through the real ADK framework with a scripted fake model, and 2 are database
   integration tests. CI runs lint, the offline tests and a Docker build on every push.
 - Total spend: ₹0 (Gemini API free tier)
 
@@ -93,8 +93,8 @@ Vite + recharts · Docker / Docker Compose · GitHub Actions (CI + Pages) · uv 
 Actions | GitHub · Demo
 
 **Wording rules:** say "Gemini API" (add "Gemma 4" if it is the agent), never "Vertex AI" or "deployed on GCP"; say the
-data is synthetic; say "list-price-equivalent" cost; state sample sizes. Bullet 1's "[Y %]" needs the random
-ticket/claim ID issue fixed first (`docs/DEEPDIVE.md` §17).
+data is synthetic; say "list-price-equivalent" cost; state sample sizes. Bullet 1's "[Y %]" can be quoted as
+measured: the random ticket/claim ID issue was fixed on 2026-11-26 (`docs/DEEPDIVE.md` §17, item 1).
 
 **One-line pitch:** "Agents fail in ways that are hard to reproduce, so I built a flight recorder: it records runs,
 replays them deterministically, injects faults to find weaknesses before a customer does, and diffs behaviour across

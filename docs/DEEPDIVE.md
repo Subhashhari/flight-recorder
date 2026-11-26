@@ -1166,7 +1166,9 @@ embedder). The `fake-` prefix is the single rule that excludes these runs from e
 
 On 2026-11-25, `pytest` collected **41 tests: 39 passed, 2 skipped** (the two integration tests skip because Docker
 Desktop was not running, so Postgres was unreachable). `ruff check` was clean. `PROGRESS.md` records all 41 passing
-when the database was up on 2026-11-21.
+when the database was up on 2026-11-21. On 2026-11-26, two tests were added for the fixes in section 17 (stable,
+idempotent ids and the repeatability attempt cap), bringing the total to **43 (41 offline, 2 integration)**; the 41
+offline tests pass.
 
 - **Pipeline (offline):** a live run records all five agents; an action run reaches the backend.
 - **Replay and branch:** cached responses served in order with zero calls; a changed request hash emits a divergence;
@@ -1330,13 +1332,18 @@ Integration tests took 4.5 minutes. Timing raw connections showed `localhost` st
 
 ## 17. Known limitations and open risks
 
-Found by reading the code on 2026-11-25. None of these is fixed yet; each says what to do about it.
+Found by reading the code on 2026-11-25. Items 1, 5 and 7 were fixed on 2026-11-26 (marked **Fixed**); the rest are
+open, and each says what to do about it.
 
-1. **Live repeatability is inflated by random ids.** Ticket and claim ids are `uuid4()` (`mock_backend.py`), so two
-   perfectly deterministic runs of a ticket or claim case produce different final answers ("IT-3F9A…" vs "IT-77C1…") and
-   are counted as "differs". The `live_differ_rate` would then measure the backend, not the model. **Fix before
-   quoting the number:** derive ids deterministically (for example from a hash of the run's case and the call
-   arguments), or normalise `IT-…`/`EXP-…` ids before comparing answers.
+1. **Fixed: live repeatability was inflated by random ids.** Ticket and claim ids were `uuid4()`, so two identical
+   runs of a ticket or claim case gave different final answers ("IT-3F9A…" vs "IT-77C1…") and counted as "differs",
+   which measured the backend, not the model. The random id also went into the writer's prompt, so it could perturb
+   the model's output as well. **Fix:** `stable_id()` in `mock_backend.py` derives the id from a SHA-256 of the
+   request (employee, category, description, and the amount for claims), and the inserts use `ON CONFLICT DO
+   NOTHING`. Identical requests get the same id, like an idempotency key in a real API. **Why not normalise ids in
+   `same_outcome` instead:** that would hide the id in the comparison but leave it in the prompts, so the confound
+   would remain. If the model words the description differently, the id changes too, and that is correctly counted as
+   a difference, since the tool arguments differed.
 2. **A branch run can never be `diverged`.** Only replay mode emits divergence events. The guide's showcase #8 ("a
    diverged replay produced by … a branch with temperature 0.7") is therefore impossible by that route; use its fallback
    (a repeatability run that differed), or replay a run after changing a prompt.
@@ -1344,12 +1351,17 @@ Found by reading the code on 2026-11-25. None of these is fixed yet; each says w
    temperature-only change would not be detected as a divergence.
 4. **`safe_tool` does not see faults 1–4.** Those faults are returned by the recorder before the tool runs. Any v1 → v2
    improvement on them comes from the prompt changes. Say so when attributing chaos results.
-5. **`safe_tool` retry after a timeout can duplicate side effects.** The first attempt's thread cannot be cancelled and
-   may still create its ticket or claim. Irrelevant for the mock backend's speed, but worth knowing.
+5. **Fixed: a `safe_tool` retry after a timeout could duplicate side effects.** The first attempt's thread cannot be
+   cancelled and may still create its record. Since the fix to item 1, a retry with the same arguments produces the
+   same id and the second insert is a no-op, so the retry is idempotent.
 6. **Judge agreement compares against the run's overall pass/fail,** which for `action` and `multi` includes the
    programmatic tool match, not only the judge's verdict. Describe the number as "agreement with automated scoring".
-7. **Repeatability has no attempt cap.** A case that keeps crashing or getting rate-limited is retried indefinitely
-   (only `ok`/`diverged` runs count towards the repeats), which could burn quota. Watch the first run, or add a cap.
+7. **Fixed: repeatability had no attempt cap.** A case that kept crashing or hitting the step budget was retried
+   indefinitely, since only `ok`/`diverged` runs count towards the repeats. **Fix:** each case gets at most
+   `repeats + 2` attempts (`EXTRA_ATTEMPTS` in `repro.py`). Attempts are counted from the database, so the cap also
+   holds across restarts. `rate_limited` and `paused` runs are quota artifacts and do not count. A capped case is
+   listed under `skipped` in `repeatability.json`, and `results.md` prints the skipped count next to the differ rate,
+   so the sample size stays visible.
 8. **Oversized requests crash the run.** The limiter raises `ValueError` if one request's estimate exceeds 0.9 × TPM
    (14,400 tokens for Gemma). With growing context along the pipeline this is unlikely at current chunk sizes, but if it
    happens it appears as `crash`; the fix would be `include_contents="none"` for the writer and verifier, or fewer

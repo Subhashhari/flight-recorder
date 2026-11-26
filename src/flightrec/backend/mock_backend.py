@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import random
-import uuid
 from dataclasses import dataclass, field
 
 from flightrec.config import load_facts
@@ -45,6 +46,16 @@ def expense_limit(grade: str, category: str) -> int:
 
 
 # ------------------------------------------------------------------ repositories
+def stable_id(prefix: str, **fields) -> str:
+    """ID derived from the request itself, like an idempotency key.
+
+    Identical requests get the same ID, so a retried call does not create a second record and repeated live runs are
+    not made to differ by a random number the model then copies into its answer (DEEPDIVE section 17, items 1 and 5).
+    """
+    canon = json.dumps({k: (str(v).strip() if isinstance(v, str) else v) for k, v in fields.items()}, sort_keys=True)
+    return f"{prefix}-{hashlib.sha256(canon.encode()).hexdigest()[:8].upper()}"
+
+
 @dataclass
 class MemoryRepo:
     employees: dict = field(default_factory=lambda: {e["employee_id"]: dict(e) for e in generate_employees()})
@@ -58,10 +69,12 @@ class MemoryRepo:
         return self.employees.get(employee_id)
 
     def add_ticket(self, t):
-        self.tickets.append(t)
+        if all(x["ticket_id"] != t["ticket_id"] for x in self.tickets):
+            self.tickets.append(t)
 
     def add_claim(self, c):
-        self.claims.append(c)
+        if all(x["claim_id"] != c["claim_id"] for x in self.claims):
+            self.claims.append(c)
 
 
 class DbRepo:
@@ -88,11 +101,12 @@ class DbRepo:
 
     def add_ticket(self, t):
         self._q("INSERT INTO tickets(ticket_id, employee_id, category, description, status) "
-                "VALUES (:ticket_id, :employee_id, :category, :description, :status)", t)
+                "VALUES (:ticket_id, :employee_id, :category, :description, :status) ON CONFLICT (ticket_id) DO NOTHING", t)
 
     def add_claim(self, c):
         self._q("INSERT INTO expense_claims(claim_id, employee_id, category, amount_inr, description, status) "
-                "VALUES (:claim_id, :employee_id, :category, :amount_inr, :description, :status)", c)
+                "VALUES (:claim_id, :employee_id, :category, :amount_inr, :description, :status) "
+                "ON CONFLICT (claim_id) DO NOTHING", c)
 
 
 class MockBackend:
@@ -123,7 +137,7 @@ class MockBackend:
         category = (category or "").strip().lower()
         if category not in TICKET_CATEGORIES:
             return {"error": "invalid_category"}
-        tid = f"IT-{uuid.uuid4().hex[:8].upper()}"
+        tid = stable_id("IT", employee_id=e["employee_id"], category=category, description=description or "")
         self.repo.add_ticket({"ticket_id": tid, "employee_id": e["employee_id"], "category": category,
                               "description": description or "", "status": "open"})
         return {"ticket_id": tid, "status": "open"}
@@ -138,7 +152,8 @@ class MockBackend:
         limit = expense_limit(e["grade"], category)
         if float(amount_inr) > limit:
             return {"error": "over_limit", "limit": limit}
-        cid = f"EXP-{uuid.uuid4().hex[:8].upper()}"
+        cid = stable_id("EXP", employee_id=e["employee_id"], category=category, amount_inr=float(amount_inr),
+                        description=description or "")
         self.repo.add_claim({"claim_id": cid, "employee_id": e["employee_id"], "category": category,
                              "amount_inr": float(amount_inr), "description": description or "", "status": "submitted"})
         return {"claim_id": cid, "status": "submitted"}

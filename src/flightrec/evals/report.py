@@ -156,7 +156,9 @@ def write_results_md() -> str:
     rc = [load_export(f"replay_check_{lab}.json") for lab in clean]
     rc = [r for r in rc if r]
     live_cell = (f"{_pct(rep['live_differ_rate'])} % of {rep['cases']} cases × {rep['repeats']} runs "
-                 f"(recorded-run replays identical: {rep['replay_identical']})") if rep else "—"
+                 f"(recorded-run replays identical: {rep['replay_identical']}"
+                 f"{'; skipped after attempt cap: ' + str(len(rep['skipped'])) if rep.get('skipped') else ''})"
+                 ) if rep else "—"
     replay_cell = "; ".join(f"{r['label']}: {_pct(r['identical_rate'])} % of {r['n']}" for r in rc) or "—"
     overhead_cell = f"{_pct(overhead)} % ({base})" if overhead is not None else "—"
     md += ["## Reproducibility", "Commands: `flightrec repeatability`, `flightrec replay-check --label L`, "

@@ -190,3 +190,46 @@ def test_list_cost():
     assert list_cost("gemini-3.5-flash-lite", 1_000_000, 1_000_000) == pytest.approx(2.80)
     assert list_cost("gemma-4-31b-it", 10**6, 10**6) == 0.0
     assert list_cost("unknown-model", 10**6, 10**6) == 0.0
+
+
+def test_ticket_and_claim_ids_are_stable_and_idempotent():
+    repo = MemoryRepo()
+    be = MockBackend(repo)
+    a = be.create_it_ticket("E1007", "hardware", "laptop screen flickers")
+    b = be.create_it_ticket("e1007 ", "Hardware", "laptop screen flickers ")  # same request, different spelling
+    c = be.create_it_ticket("E1007", "hardware", "keyboard broken")
+    assert a == b and a["ticket_id"] != c["ticket_id"]
+    assert len(repo.tickets) == 2  # the retried request did not create a second ticket
+    assert MockBackend(MemoryRepo()).create_it_ticket("E1007", "hardware", "laptop screen flickers") == a
+    e = next(x for x in generate_employees() if x["grade"] == "L2")
+    x = be.submit_expense_claim(e["employee_id"], "meals", 900, "lunch")
+    y = be.submit_expense_claim(e["employee_id"], "meals", 900.0, "lunch")
+    z = be.submit_expense_claim(e["employee_id"], "meals", 800, "lunch")
+    assert x == y and x["claim_id"] != z["claim_id"] and len(repo.claims) == 2
+
+
+def test_repeatability_attempt_cap(monkeypatch):
+    import asyncio
+    from types import SimpleNamespace
+
+    import flightrec.agents.executor as ex
+    from flightrec.evals import repro
+
+    rows: list[dict] = []
+    monkeypatch.setattr(repro.store, "runs_in_label", lambda label: list(rows))
+    calls = {"n": 0}
+
+    async def always_crash(query, employee_id, **kw):
+        calls["n"] += 1
+        row = {"run_id": f"r{calls['n']}", "case_id": kw["case_id"], "status": "crash", "final_answer": None}
+        rows.append(row)
+        return SimpleNamespace(status="crash", row=lambda: row)
+
+    monkeypatch.setattr(ex, "execute", always_crash)
+    case = SimpleNamespace(id="C1", category="policy_qa", query="q", employee_id="E1001")
+    out = asyncio.run(repro._repeatability([case], repeats=3, wait=False))
+    assert calls["n"] == 3 + repro.EXTRA_ATTEMPTS
+    assert out["cases"] == 0 and out["skipped"][0]["attempts"] == 5
+    # a restart does not spend more: attempts already in the database count towards the cap
+    asyncio.run(repro._repeatability([case], repeats=3, wait=False))
+    assert calls["n"] == 5
