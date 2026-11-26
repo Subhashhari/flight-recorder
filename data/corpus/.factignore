@@ -1,0 +1,5 @@
+# Harmless numbers flagged by check-facts (doc_id: number). Reviewed 2026-11-26.
+# data_handling: "4 distinct levels" = len(facts.data_handling.levels)
+data_handling: 4
+# expense_policy: "5 levels (L1 through L5)" = number of grades in facts.expense_limits_inr_per_day
+expense_policy: 5
