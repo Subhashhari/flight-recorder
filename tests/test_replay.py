@@ -154,6 +154,20 @@ def _lim(rpm=10, tpm=10_000, rpd=100, store=None, now=None):
     return lim, clock
 
 
+def test_limiter_counts_batched_requests_per_item():
+    # embed_content counts one request per text: a batch of n must use n of the RPM window and of the daily count
+    store = MemoryQuotaStore()
+    lim, clock = _lim(rpm=100, rpd=200, store=store)  # 90 / minute, 180 / day effective
+    assert lim.acquire("m", n=50) == 0.0
+    assert store.calls(dt.date(2026, 11, 21), "m") == 50
+    assert lim.acquire("m", n=50) == pytest.approx(60.05, abs=0.01)  # 100 > 90 in one minute: waits
+    lim.acquire("m", n=50)
+    with pytest.raises(QuotaExhausted):  # 150 + 50 > 180
+        lim.acquire("m", n=50)
+    with pytest.raises(ValueError):  # a single call above the RPM budget could never fit
+        lim.acquire("m", n=91)
+
+
 def test_limiter_rpm_blocks_until_window_frees():
     lim, clock = _lim(rpm=10)  # 9 effective
     for _ in range(9):

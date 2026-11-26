@@ -20,13 +20,13 @@ To ensure that critical business functions remain operational, all incoming IT r
 
 ## 4. Escalation Procedures
 
-When an incident is reported, the IT Support team will perform an initial assessment to assign a priority level. If the issue cannot be resolved within the designated response time, the ticket must be escalated to the next tier of technical support.
+When an incident is reported, the IT Support team will perform an initial assessment to assign a priority level. If the issue does not receive a response within the designated response time, the ticket must be escalated to the next tier of technical support.
 
 ### 4.1 P1 Escalation
-P1 incidents represent the highest level of urgency. If a P1 incident is not resolved within 15 minutes, the on-call engineer must notify the IT Manager immediately. The IT Manager is responsible for mobilizing additional technical resources and providing status updates to relevant stakeholders until the issue is resolved.
+P1 incidents represent the highest level of urgency. If a P1 incident does not receive a response within 15 minutes, the on-call engineer must notify the IT Manager immediately. The IT Manager is responsible for mobilizing additional technical resources and providing status updates to relevant stakeholders until the issue is resolved.
 
 ### 4.2 P2 Escalation
-P2 incidents involve significant disruptions that do not necessarily halt all business operations but require prompt attention. If a P2 incident remains unresolved after 4 hours, the ticket will be automatically escalated to the Senior IT Support team. The Senior IT Support team will review the incident and determine if further escalation to specialized engineering teams is required.
+P2 incidents involve significant disruptions that do not necessarily halt all business operations but require prompt attention. If a P2 incident has not received a response within 4 hours, the ticket will be automatically escalated to the Senior IT Support team. The Senior IT Support team will review the incident and determine if further escalation to specialized engineering teams is required.
 
 ### 4.3 P3 Escalation
 P3 incidents are standard requests that have a lower impact on immediate business operations. If a P3 incident has not been addressed within 2 days, the ticket will be reviewed by the IT Support lead. The lead will assess the backlog and determine if the request requires additional resources or if it can be scheduled for a later time based on current workload priorities.

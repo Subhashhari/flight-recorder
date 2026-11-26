@@ -38,13 +38,15 @@ class Limiter:
                  now_pt: Callable[[], dt.datetime] = lambda: dt.datetime.now(PT)):
         self.store, self.limits = store, {norm_model(k): v for k, v in limits.items()}
         self.clock, self.sleep, self.now_pt = clock, sleep, now_pt
-        self.win: dict[str, deque] = defaultdict(deque)  # model -> deque[(monotonic_ts, tokens)]
+        self.win: dict[str, deque] = defaultdict(deque)  # model -> deque[(monotonic_ts, tokens, n_requests)]
         self._lock = threading.Lock()
 
-    def acquire(self, model: str, est_tokens: int = 0) -> float:
+    def acquire(self, model: str, est_tokens: int = 0, n: int = 1) -> float:
         """Block until a call to `model` fits the RPM/TPM windows; returns seconds waited.
 
-        Raises KeyError for models missing from limits.yaml, ValueError when one request exceeds the TPM
+        `n` is how many requests Google counts for this call: 1 for generate_content, but one per text for a batched
+        embed_content (the free tier counts each content item against requests/minute and requests/day).
+        Raises KeyError for models missing from limits.yaml, ValueError when one call exceeds the RPM or TPM
         budget, QuotaExhausted when the (safety-scaled) daily limit is reached.
         """
         model = norm_model(model)
@@ -54,21 +56,23 @@ class Limiter:
         rpm, tpm = int(lim["rpm"] * self.SAFETY), int(lim["tpm"] * self.SAFETY)
         if est_tokens > tpm:
             raise ValueError(f"single request exceeds TPM budget ({est_tokens} > {tpm}) for {model}")
+        if n > rpm:
+            raise ValueError(f"one call counts {n} requests, above the RPM budget {rpm} for {model}")
         with self._lock:
             now_pt = self.now_pt()
             today = now_pt.date()
-            if self.store.calls(today, model) >= int(lim["rpd"] * self.SAFETY):
+            if self.store.calls(today, model) + n > int(lim["rpd"] * self.SAFETY):
                 raise QuotaExhausted(model, next_reset(now_pt))
             waited, w = 0.0, self.win[model]
             while True:
                 now = self.clock()
                 while w and now - w[0][0] >= 60:
                     w.popleft()
-                if len(w) < rpm and sum(t for _, t in w) + est_tokens <= tpm:
+                if sum(k for _, _, k in w) + n <= rpm and sum(t for _, t, _ in w) + est_tokens <= tpm:
                     break
                 sleep = 60 - (now - w[0][0]) + 0.05
                 self.sleep(sleep)
                 waited += sleep
-            w.append((self.clock(), est_tokens))
-            self.store.increment(today, model)  # counted before the call; retries count too
+            w.append((self.clock(), est_tokens, n))
+            self.store.increment(today, model, n)  # counted before the call; retries count too
             return waited

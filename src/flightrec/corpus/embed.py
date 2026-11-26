@@ -34,7 +34,8 @@ def embed_texts(texts: list[str], task_type: str, model: str | None = None) -> l
     out: list[list[float]] = []
     for i in range(0, len(texts), BATCH):
         batch = texts[i:i + BATCH]
-        limiter().acquire(model, int(sum(len(t) for t in batch) / 4) + 64)
+        # the free tier counts every text in a batch as one request (RPM and RPD), so acquire len(batch) requests
+        limiter().acquire(model, int(sum(len(t) for t in batch) / 4) + 64, n=len(batch))
         r = genai_client().models.embed_content(
             model=model, contents=batch,
             config=types.EmbedContentConfig(task_type=task_type, output_dimensionality=DIM))

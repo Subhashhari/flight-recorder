@@ -23,8 +23,8 @@ class MemoryQuotaStore:
     def calls(self, day, model) -> int:
         return self.c[(day, model)]
 
-    def increment(self, day, model) -> None:
-        self.c[(day, model)] += 1
+    def increment(self, day, model, n: int = 1) -> None:
+        self.c[(day, model)] += n
 
 
 class DbQuotaStore:
@@ -34,11 +34,11 @@ class DbQuotaStore:
             row = r.first()
             return int(row[0]) if row else 0
 
-    def increment(self, day, model) -> None:
+    def increment(self, day, model, n: int = 1) -> None:
         with engine().begin() as c:
-            c.execute(text("""INSERT INTO quota_usage(day_pt, model, calls) VALUES (:d, :m, 1)
-                              ON CONFLICT (day_pt, model) DO UPDATE SET calls = quota_usage.calls + 1"""),
-                      {"d": day, "m": model})
+            c.execute(text("""INSERT INTO quota_usage(day_pt, model, calls) VALUES (:d, :m, :n)
+                              ON CONFLICT (day_pt, model) DO UPDATE SET calls = quota_usage.calls + :n"""),
+                      {"d": day, "m": model, "n": n})
 
 
 def quota_rows() -> list[dict]:

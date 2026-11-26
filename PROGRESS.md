@@ -13,6 +13,11 @@
 - Ingest: 124 chunks from 12 documents. Gate passes (`how many sick leaves` -> leave_policy top 5; scores show the
   keyword side matched nothing for this query, see DEEPDIVE 17 item 9).
 - `gen_eval_cases.py`: `data/eval/candidates.jsonl` with qa 22, unanswerable 6, action 12, multi 12.
+- 2026-11-27: reading the candidates showed `support_escalation.md` section 4 turning the facts' P1/P2 *response*
+  times into *resolution* deadlines (check-facts cannot see this: the numbers are right). Section 4 now says "does not
+  receive a response within"; re-ingested. Pre-check of all 52 candidates against facts.yaml, the corpus and the
+  seeded employees: all gold numbers, limits, over/under verdicts, balances and managers correct.
+- 2026-11-27: limiter bug, embedding batches counted as 1 request instead of 1 per text (DEEPDIVE 16.5). Fixed + test.
 - **Next (human):** `uv run flightrec review-cases`. Then smoke eval (`eval --label smoke-1 --limit 3`).
 
 ## 2026-11-26: key added, first probe run, moving to another laptop

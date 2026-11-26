@@ -1346,6 +1346,22 @@ Integration tests took 4.5 minutes. Timing raw connections showed `localhost` st
   defines the match. It is deliberately narrow (`ServerError`, or a 5xx code next to its status word) so a message that
   merely contains "500" is not retried. A unit test covers both the matches and the non-matches.
 
+### 16.5 Embedding batches were counted as one request (2026-11-27)
+
+- **Symptom:** a re-ingest a few minutes after the first one failed with `429 RESOURCE_EXHAUSTED ... Quota exceeded for
+  metric: generativelanguage.googleapis.com/embed_content_free_tier_requests, limit: 100 ... Embed content requests per
+  minute limit exceeded on Free Tier`, although the limiter had allowed the call.
+- **Cause:** the free tier counts **every text in a batched `embed_content` call as one request**. The limiter counted a
+  batch of 50 as 1, so one ingest (124 chunks) was booked as 3 requests per minute and 3 of the 1,000 per day, when it
+  really used 124 of each.
+- **Fix:** `Limiter.acquire(model, est_tokens, n=1)` takes the number of requests the call counts for; the RPM window and
+  the persisted daily counter both add `n`, and a single call with `n` above the RPM budget raises `ValueError`.
+  `embed_texts` passes `n=len(batch)`. Behaviour for `n=1` is unchanged. Unit test:
+  `test_limiter_counts_batched_requests_per_item`. The day's embedding counter was raised by hand to a conservative 400
+  to cover the under-counted calls.
+- **Side benefit:** this is the real free-tier 429 text that spike (f) used to provoke by bypassing the limiter; it is a
+  `google.genai.errors.ClientError` whose text starts `429 RESOURCE_EXHAUSTED`, matched by the executor's regex.
+
 ---
 
 ## 17. Known limitations and open risks
@@ -1385,7 +1401,8 @@ open, and each says what to do about it.
    happens it appears as `crash`; the fix would be `include_contents="none"` for the writer and verifier, or fewer
    retrieved chunks.
 9. **Hybrid search may equal vector search** for long questions (section 6.4). The retrieval eval will show it.
-10. **The embedding quota is a secondary limit.** Each unique search string costs one embedding call (900/day usable).
+10. **The embedding quota is a secondary limit.** Each unique search string costs one embedding call (900/day usable),
+    and each ingest costs one request per chunk (124), not per batch (section 16.5).
     Repeated cases hit the cache, but agent-rephrased queries vary, especially between v1 and v2. Watch
     `quota_usage` for the embedding model during the first full day.
 11. **Live runs leave side effects.** Every eval run that files a ticket or claim inserts a row. Harmless (no test reads
