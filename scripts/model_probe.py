@@ -70,6 +70,28 @@ def err(e: Exception) -> str:
     return f"{type(e).__name__}: {str(e)[:200]}"
 
 
+PROBE_WAITS = (30, 60, 120)
+
+
+def retry_transient(fn, *args) -> dict:
+    """Re-run a probe whose failure was a transient server error (e.g. 503 "high demand").
+
+    A 5xx says nothing about whether the model can do the job, so it must not decide Plan A vs Plan B.
+    """
+    from flightrec.agents.executor import TRANSIENT_RE
+    r: dict = {}
+    for attempt in range(len(PROBE_WAITS) + 1):
+        r = fn(*args)
+        failed = any(v is False for k, v in r.items() if re.fullmatch(r"P\d", k))
+        if not (failed and TRANSIENT_RE.search(json.dumps(r))) or attempt == len(PROBE_WAITS):
+            break
+        say(f"  transient server error; retrying in {PROBE_WAITS[attempt]} s")
+        time.sleep(PROBE_WAITS[attempt])
+    if attempt:
+        r["probe_attempts"] = attempt + 1
+    return r
+
+
 # ------------------------------------------------------------------ probes
 def p1_p2_p4(client, model, rpm):
     from google.genai import types
@@ -282,11 +304,11 @@ def main() -> int:
         if not mid:
             return {"available": False}
         say(f"\nprobing {name} = {mid} (P1-P6)")
-        r = p1_p2_p4(client, mid, rpm)
+        r = retry_transient(p1_p2_p4, client, mid, rpm)
         if r.get("P1") and r.get("P2"):
-            r |= p3(mid, rpm)
-            r |= p5(client, mid, rpm) if r.get("P3") else {"P5": False}
-            r |= p6(mid, rpm) if r.get("P3") else {"P6": False}
+            r |= retry_transient(p3, mid, rpm)
+            r |= retry_transient(p5, client, mid, rpm) if r.get("P3") else {"P5": False}
+            r |= retry_transient(p6, mid, rpm) if r.get("P3") else {"P6": False}
         r["passes_agent"] = all(r.get(f"P{i}") for i in range(1, 7))
         say(json.dumps(r, indent=1))
         return r
@@ -296,7 +318,7 @@ def main() -> int:
         if not mid:
             return {"available": False, "P7": False}
         say(f"\nprobing {name} = {mid} (P7)")
-        r = p7(client, mid, CONSOLE[name][1])
+        r = retry_transient(p7, client, mid, CONSOLE[name][1])
         say(json.dumps(r))
         return r
 
@@ -320,7 +342,7 @@ def main() -> int:
             agent, judge, plan, tier = ids["Gemini 3.5 Flash Lite"], ids["Gemini 3.1 Flash Lite"], "B", "B_sprint"
     embed = None
     for cand in emb_candidates:
-        r = p8(client, cand, 100)
+        r = retry_transient(p8, client, cand, 100)
         results[f"embedding:{cand}"] = r
         say(f"\nprobing embedding {cand} (P8): {json.dumps(r)}")
         if r.get("P8"):

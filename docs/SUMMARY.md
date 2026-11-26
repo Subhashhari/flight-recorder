@@ -71,7 +71,7 @@ Vite + recharts · Docker / Docker Compose · GitHub Actions (CI + Pages) · uv 
 
 - 5 agents, 4 tools, 12 policy documents, 40 synthetic employees, 8 fault types, 24 CLI commands, 3 UI pages
 - Rate limiter covering requests/minute, tokens/minute and requests/day, with pause and resume across quota days
-- 43 automated tests: 41 run offline through the real ADK framework with a scripted fake model, and 2 are database
+- 44 automated tests: 42 run offline through the real ADK framework with a scripted fake model, and 2 are database
   integration tests. CI runs lint, the offline tests and a Docker build on every push.
 - Total spend: ₹0 (Gemini API free tier)
 

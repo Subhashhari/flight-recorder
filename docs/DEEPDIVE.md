@@ -781,6 +781,7 @@ In `execute()`:
 | ADK's call cap hit | v2 sets a fixed apology as the final answer | `budget_exceeded` | yes |
 | any other exception | message stored in `totals.outputs.error` | `crash` | yes |
 | 429 / `RESOURCE_EXHAUSTED` / "quota" in the exception chain | the **whole run** is retried after 30 s, 60 s, 120 s (4 attempts); still failing → | `rate_limited` | no (re-queued) |
+| a transient server error (`ServerError`, HTTP 500/502/503/504, "high demand", "overloaded") | same retries as a 429; still failing → | `rate_limited` | no (re-queued) |
 | the limiter's daily cap reached | run saved, exception re-raised to the runner | `paused` | no |
 
 **Why retry the whole run, not the single call:** every stored trace stays complete and coherent, and partial runs never
@@ -788,7 +789,10 @@ mix with successful ones. **Cost:** calls that had already succeeded in that run
 `RunContext`, so a failed attempt's events are discarded. Fake models are never treated as rate-limited.
 
 **Why `rate_limited` and `paused` are excluded from statistics:** they say something about the free tier, not about the
-agent. Every summary filters to `ok`, `diverged`, `budget_exceeded`, `crash`.
+agent. The same goes for server overload: before 2026-11-26 a 503 was recorded as `crash`, which counts as an agent
+failure, so a busy day at Google would have lowered the measured success rate. `rate_limited` was kept as the status
+name (instead of adding a new one) so the report, UI and resume logic need no change. The stored error text says which
+of the two it was. Every summary filters to `ok`, `diverged`, `budget_exceeded`, `crash`.
 
 Exception matching walks the whole cause/context chain and exception groups (`_chain`), because ADK and asyncio wrap
 the original error.
@@ -1167,8 +1171,8 @@ embedder). The `fake-` prefix is the single rule that excludes these runs from e
 On 2026-11-25, `pytest` collected **41 tests: 39 passed, 2 skipped** (the two integration tests skip because Docker
 Desktop was not running, so Postgres was unreachable). `ruff check` was clean. `PROGRESS.md` records all 41 passing
 when the database was up on 2026-11-21. On 2026-11-26, two tests were added for the fixes in section 17 (stable,
-idempotent ids and the repeatability attempt cap), bringing the total to **43 (41 offline, 2 integration)**; the 41
-offline tests pass.
+idempotent ids and the repeatability attempt cap) and one for transient server errors (section 16.4), bringing the
+total to **44 (42 offline, 2 integration)**; the 42 offline tests pass.
 
 - **Pipeline (offline):** a live run records all five agents; an action run reaches the backend.
 - **Replay and branch:** cached responses served in order with zero calls; a changed request hash emits a divergence;
@@ -1327,6 +1331,20 @@ Integration tests took 4.5 minutes. Timing raw connections showed `localhost` st
   injection: instructions and data in one string.
 - **Spike (g) showed `diverged`** because the test relabelled the model name (part of every hash). Expected; the
   message now says so explicitly.
+
+### 16.4 A busy server almost chose the plan (2026-11-26)
+
+- **Symptom:** the first real probe run picked Plan B. Both Gemma 4 models had failed P1.
+- **Cause:** the failure was `503 UNAVAILABLE: This model is currently experiencing high demand`, a temporary
+  server-side condition. The probe counted any exception as a capability failure, so the plan was decided by Google's
+  load at that minute, not by what Gemma can do.
+- **Why it mattered:** Plan A (Gemma) has a much larger daily quota, so it takes about 2 days. Plan B takes about
+  4–5 days and runs a smaller tier (40 cases instead of 80).
+- **Fix:** `retry_transient()` in `model_probe.py` re-runs a probe whose failure was a transient server error, after
+  30, 60 and 120 s, and records `probe_attempts`. The same class of error is now retried in the executor and in
+  `llm._call` (judge, corpus and case generation) instead of becoming a `crash`. `TRANSIENT_RE` in `executor.py`
+  defines the match. It is deliberately narrow (`ServerError`, or a 5xx code next to its status word) so a message that
+  merely contains "500" is not retried. A unit test covers both the matches and the non-matches.
 
 ---
 

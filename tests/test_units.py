@@ -233,3 +233,20 @@ def test_repeatability_attempt_cap(monkeypatch):
     # a restart does not spend more: attempts already in the database count towards the cap
     asyncio.run(repro._repeatability([case], repeats=3, wait=False))
     assert calls["n"] == 5
+
+
+def test_transient_server_errors_are_not_crashes():
+    from flightrec.agents.executor import is_rate_limit, is_transient
+
+    class ServerError(Exception):
+        pass
+
+    overload = ServerError("503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing "
+                           "high demand.', 'status': 'UNAVAILABLE'}}")
+    assert is_transient(overload) and not is_rate_limit(overload)
+    assert is_transient(RuntimeError("500 INTERNAL. An internal error has occurred"))
+    wrapped = RuntimeError("tool failed")
+    wrapped.__cause__ = overload
+    assert is_transient(wrapped)
+    assert not is_transient(ValueError("expected 500 tokens, got 503"))
+    assert not is_transient(KeyError("final"))

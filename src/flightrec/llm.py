@@ -13,7 +13,7 @@ RETRY_WAITS = (30, 60, 120)
 
 
 def _call(model: str, contents, config):
-    from flightrec.agents.executor import is_rate_limit
+    from flightrec.agents.executor import is_rate_limit, is_transient
     from flightrec.runtime import genai_client, limiter
     est = int(len(json.dumps(contents, default=str)) / 4) + 512 + int(len(str(getattr(config, "system_instruction", "") or "")) / 4)
     for attempt in range(len(RETRY_WAITS) + 1):
@@ -21,7 +21,7 @@ def _call(model: str, contents, config):
         try:
             return genai_client().models.generate_content(model=model, contents=contents, config=config)
         except Exception as e:  # noqa: BLE001
-            if is_rate_limit(e) and attempt < len(RETRY_WAITS):
+            if (is_rate_limit(e) or is_transient(e)) and attempt < len(RETRY_WAITS):
                 time.sleep(RETRY_WAITS[attempt])
                 continue
             raise

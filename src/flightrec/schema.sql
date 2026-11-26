@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS runs (
   label TEXT, case_id TEXT,
   mode TEXT NOT NULL,        -- live | replay | branch | chaos
   fault TEXT,
-  status TEXT NOT NULL,      -- ok | crash | diverged | budget_exceeded | rate_limited | paused
+  status TEXT NOT NULL,      -- ok | crash | diverged | budget_exceeded | rate_limited | paused (rate_limited = 429 or 5xx after retries)
   showcase BOOLEAN NOT NULL DEFAULT FALSE,
   user_query TEXT NOT NULL, employee_id TEXT NOT NULL, final_answer TEXT,
   config JSONB NOT NULL,     -- models, temperature, prompt_version, overrides, tier

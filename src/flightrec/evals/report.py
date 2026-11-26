@@ -123,7 +123,8 @@ def write_results_md() -> str:
           f"Plan: {plan} · Agent model: {s.agent_model} · Judge model: {s.judge_model} · Embedding model: "
           f"{s.embed_model} · Tier: {s.scale_tier} · Commit: {_commit()} · Date: {dt.date.today().isoformat()}",
           "", "Synthetic data (Northwind Labs). Costs are list-price equivalents (config/pricing.yaml); actual spend Rs 0."
-          " Statistics exclude `rate_limited` and `paused` runs.", "",
+          " Statistics exclude `rate_limited` runs (HTTP 429 or a 5xx server error still failing after 3 retries) and"
+          " `paused` runs (daily quota spent).", "",
           "Regenerate with `uv run flightrec report`.", "", "## Clean eval", "Command: `flightrec eval --label <label>`", "",
           "| Label | Cases | Success % | qa | unanswerable | action | multi | Halluc. % | p50 s | p95 s | tokens/run | list-price $/run |",
           "|---|---|---|---|---|---|---|---|---|---|---|---|"]

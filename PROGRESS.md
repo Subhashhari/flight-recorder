@@ -30,6 +30,9 @@ google-adk 2.15.0, google-genai 2.34.0. Windows equivalents of the Makefile targ
 - 2026-11-26: random `uuid4` ticket/claim ids would have inflated the live repeatability differ rate → ids are now
   derived from the request (idempotent inserts). Repeatability now caps attempts per case at `repeats + 2`. Two
   offline tests added. See docs/DEEPDIVE.md section 17, items 1, 5 and 7.
+- 2026-11-26: a 503 "high demand" made the first probe reject Gemma and pick Plan B. Transient 5xx errors are now
+  retried in the probe, the executor and `llm._call`, and a run that still fails is `rate_limited` (excluded), not
+  `crash`. See docs/DEEPDIVE.md section 16.4.
 - `localhost` DB connections ~20 s each on Windows → DSNs use `127.0.0.1`.
 - `make_pdfs.py` table rendering crashed (`out +=` in a closure); check-facts mis-read en-dash time ranges.
 

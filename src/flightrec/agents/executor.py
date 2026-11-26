@@ -25,6 +25,11 @@ from flightrec.recorder.ratelimit import QuotaExhausted
 
 # Rate-limit match (spike (f)): the google-genai ClientError text for HTTP 429 contains "429 RESOURCE_EXHAUSTED".
 RATE_LIMIT_RE = re.compile(r"429|RESOURCE_EXHAUSTED|quota", re.I)
+# Transient server-side failures (google-genai ServerError, HTTP 5xx, e.g. "503 UNAVAILABLE ... high demand"). They say
+# nothing about the agent, so they are retried like a 429 and, if retries run out, recorded as `rate_limited` (excluded
+# from statistics) rather than `crash` (counted as an agent failure).
+TRANSIENT_RE = re.compile(r"ServerError|\b50[0234]\b.{0,3}(INTERNAL|UNAVAILABLE|BAD_GATEWAY|DEADLINE_EXCEEDED)|"
+                          r"high demand|overloaded", re.I)
 RETRY_WAITS = (30, 60, 120)
 APP = "policydesk"
 
@@ -74,6 +79,11 @@ def find_exc(exc: BaseException, cls) -> BaseException | None:
 
 def is_rate_limit(exc: BaseException) -> bool:
     return any(RATE_LIMIT_RE.search(f"{type(e).__name__} {e}") for e in _chain(exc)
+               if not isinstance(e, QuotaExhausted))
+
+
+def is_transient(exc: BaseException) -> bool:
+    return any(TRANSIENT_RE.search(f"{type(e).__name__} {e}") for e in _chain(exc)
                if not isinstance(e, QuotaExhausted))
 
 
@@ -196,7 +206,7 @@ async def execute(query: str | None, employee_id: str | None, *, mode: str = "li
                 status, error = "budget_exceeded", f"max_llm_calls={max_calls} exceeded"
                 final = BUDGET_APOLOGY if prompt_version == "v2" else None  # v2 hardening #5
                 break
-            if is_rate_limit(exc) and not is_fake(model):
+            if (is_rate_limit(exc) or is_transient(exc)) and not is_fake(model):
                 if attempt < attempts - 1:
                     await asyncio.sleep(retry_waits[attempt])
                     continue
