@@ -1,5 +1,29 @@
 # Progress
 
+## 2026-11-26: key added, first probe run, moving to another laptop
+
+### State
+- First real model probe: both Gemma 4 models returned `503 UNAVAILABLE: high demand` on every attempt (with 30/60/120 s
+  retries); a direct test got 7 of 8 calls failing and one success after 87 s. Gemini 3.5 Flash Lite passed P1-P6 5/5,
+  3.1 Flash Lite passed P7 5/5, gemini-embedding-001 passed P8 (768-d). **Automatic decision: Plan B** (`B_sprint`).
+  Output: `docs/quota-log.md`, `docs/probe_output.txt`, `config/limits.yaml`.
+- Not yet generated: corpus, PDFs, eval cases, any eval/chaos/repeatability runs. The database on the old laptop holds
+  only the schema and the 40 seeded employees (both reproducible), so nothing needs to be copied across.
+
+### Setting up the new laptop (Windows)
+1. Install Git, Docker Desktop, uv (`winget install astral-sh.uv`) and Node 24 (only needed for the UI build).
+2. `git clone https://github.com/Subhashhari/flight-recorder.git` and `cd flight-recorder`, then `uv sync`.
+3. Copy `.env.example` to `.env`, put the API key in `GOOGLE_API_KEY` yourself (never paste it into a chat). Keep
+   `FLIGHTREC_DB_PORT=5432` and the `:5432` DSN unless that port is taken (the old laptop needed 5433).
+4. Start Docker Desktop, then `docker compose up -d db`, `uv run flightrec db-init`,
+   `uv run python scripts/seed_employees.py`, `uv run pytest -q -m "not integration"` (expect 42 passed).
+5. `uv run python scripts/model_probe.py`: re-runs the plan choice. If Gemma has recovered it picks Plan A, otherwise
+   Plan B again. It writes the four `TBD` values in `.env`.
+6. Continue with `docs/DEEPDIVE.md` section 19 (remaining steps): spike, corpus, PDFs, check-facts, ingest, cases,
+   review-cases, ...
+7. Power settings: the machine only needs to be on while a job runs. Jobs stop when the day's quota is spent and resume
+   from the database on the next run (reset 13:30 IST).
+
 ## 2026-11-21: initial build (all phases' code), no API key yet
 
 Environment actually used: Windows 11 (the guide assumes macOS), uv 0.13.9, Python 3.12, Node 24, Docker Desktop,

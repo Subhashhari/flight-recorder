@@ -1,6 +1,11 @@
 # AI Studio rate-limit page, read 2026-11-18. tpm in tokens/minute.
-# Real model IDs are written here by scripts/model_probe.py (Phase 0). The limiter refuses any model not listed.
-# fake-* models are local test doubles (no network, no quota); runs using them are never exported or reported.
+# Model IDs resolved by scripts/model_probe.py on 2026-11-26.
+# The limiter refuses any model not listed. fake-* are local test doubles (never reported).
+gemma-4-31b-it: {rpm: 30, tpm: 16000, rpd: 14400}   # Gemma 4 31B
+gemma-4-26b-a4b-it: {rpm: 30, tpm: 16000, rpd: 14400}   # Gemma 4 26B
+gemini-3.5-flash-lite: {rpm: 15, tpm: 250000, rpd: 500}   # Gemini 3.5 Flash Lite
+gemini-3.1-flash-lite: {rpm: 15, tpm: 250000, rpd: 500}   # Gemini 3.1 Flash Lite
+gemini-embedding-001: {rpm: 100, tpm: 30000, rpd: 1000}   # Gemini Embedding
 fake-agent: {rpm: 100000, tpm: 100000000, rpd: 100000000}
 fake-judge: {rpm: 100000, tpm: 100000000, rpd: 100000000}
 fake-embed: {rpm: 100000, tpm: 100000000, rpd: 100000000}
