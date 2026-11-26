@@ -53,7 +53,7 @@ def review_cases() -> dict:
                 f"[b]Must abstain:[/b] {c.must_abstain}\n\n[dim]{_gold_chunks(c)}[/dim]")
         console.print(Panel(body, title=f"{c.category}: {counts[c.category]}/{targets[c.category]} accepted"))
         while True:
-            k = console.input("[a]ccept / [r]eject / [e]dit gold answer / [q]uit > ").strip().lower()
+            k = console.input(r"\[a]ccept / \[r]eject / \[e]dit gold answer / \[q]uit > ").strip().lower()
             if k in ("a", "r", "e", "q"):
                 break
         if k == "q":
@@ -93,7 +93,7 @@ def label(source_label: str = "baseline-v1", n: int = 20, seed: int = 13) -> dic
                             f"[b]Answer:[/b] {r['final_answer']}\n\n[dim]{evid}[/dim]",
                             title=f"label {len(rows) + 1}/{n}"))
         while True:
-            k = console.input("Does this reply pass? [p]ass / [f]ail / [q]uit > ").strip().lower()
+            k = console.input(r"Does this reply pass? \[p]ass / \[f]ail / \[q]uit > ").strip().lower()
             if k in ("p", "f", "q"):
                 break
         if k == "q":
