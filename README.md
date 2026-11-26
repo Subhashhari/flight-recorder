@@ -77,7 +77,7 @@ make corpus                          # 10 policy docs via the judge model + 2 CS
 uv run flightrec check-facts         # fix flagged numbers in data/corpus/*.md, re-run until clean
 make ingest
 make cases                           # eval-case candidates
-uv run flightrec review-cases        # human accept / reject / edit
+uv run flightrec review-cases        # human accept / reject / edit (how the shipped set was reviewed: DEEPDIVE 11.2)
 uv run flightrec eval --label smoke-1 --limit 3
 make eval LABEL=baseline-v1          # resumable; sleeps until the quota reset with --wait
 uv run flightrec eval-retrieval --mode hybrid && uv run flightrec eval-retrieval --mode vector

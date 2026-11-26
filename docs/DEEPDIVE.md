@@ -950,6 +950,24 @@ after every decision (so quitting loses nothing), writes `data/eval/cases.jsonl`
 `rejected.jsonl` separately. **Why:** generated gold answers can be wrong, and a wrong gold answer silently corrupts
 every score built on it. A human check of 80 short cases takes about an hour.
 
+**What was actually done (2026-11-27, B_sprint, 40 cases):** a hybrid of automated checks and human review.
+1. An automated pre-check compared every one of the 52 candidates with the sources of truth: each number in a qa gold
+   answer against `data/facts.yaml` *and* the gold document's text; for action and multi cases, the expense limit,
+   the over/under-limit verdict, leave balances and manager names against `generate_employees(seed=7)`; and
+   duplicates. Every check passed. It also surfaced a corpus error that `check-facts` cannot see (the escalation
+   document turned *response* times into *resolution* deadlines; fixed and re-ingested).
+2. The human reviewer accepted the first two cases in `review-cases`, then reviewed and approved the proposed
+   accept/reject list. `scripts/auto_accept_cases.py` applied it. Rejected: `act-007` (duplicate of `act-001`),
+   `qa-014` (its gold answer was invented by the document generator, not in `facts.yaml`), `qa-018` (same fact as
+   `qa-015`), plus five qa cases dropped for coverage, so that each of the 11 policy documents has at least one qa
+   case (in file order the qa slots would have filled before `travel_policy`, `code_of_conduct` and
+   `holidays_2027`).
+3. `data/eval/validation.json` records, per case, whether the decision was made in `review-cases` (`human`) or by
+   the approved list (`auto`), and the reason for every rejection.
+
+Describe it as "gold answers verified automatically against the source of truth; selection reviewed and approved by
+a human", not as "every case hand-read".
+
 ### 11.3 Scoring clean runs
 
 Two parts: **programmatic** for anything exact, **LLM judge** for meaning.

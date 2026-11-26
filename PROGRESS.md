@@ -18,7 +18,11 @@
   receive a response within"; re-ingested. Pre-check of all 52 candidates against facts.yaml, the corpus and the
   seeded employees: all gold numbers, limits, over/under verdicts, balances and managers correct.
 - 2026-11-27: limiter bug, embedding batches counted as 1 request instead of 1 per text (DEEPDIVE 16.5). Fixed + test.
-- **Next (human):** `uv run flightrec review-cases`. Then smoke eval (`eval --label smoke-1 --limit 3`).
+- 2026-11-27: eval set fixed, 40 cases (qa 15, unanswerable 5, action 10, multi 10), every policy document covered
+  by at least one qa case. Gold answers verified automatically; selection reviewed and approved by the human (2 cases
+  accepted in review-cases, the rest via the approved list in `scripts/auto_accept_cases.py`). DEEPDIVE 11.2,
+  `data/eval/validation.json`.
+- Next: smoke eval, then baseline-v1 and the rest of DEEPDIVE 19, unattended with `--resume --wait`.
 
 ## 2026-11-26: key added, first probe run, moving to another laptop
 
