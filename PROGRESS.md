@@ -1,5 +1,20 @@
 # Progress
 
+## 2026-11-26 (evening, new laptop): probe, spike, corpus, ingest, candidates done
+
+- New laptop set up: uv 0.13.10 installed, `uv sync`, Docker DB on host port 5433 (from `.env`), `db-init`, 40
+  employees seeded, `pytest -m "not integration"` 42 passed, ruff clean.
+- Probe re-run with 503 retries: Gemma 4 31B and 26B still `503 UNAVAILABLE` "high demand" on all 4 attempts each.
+  3.5 Flash Lite P1-P6 pass (P5 5/5, P6 5/5), 3.1 Flash Lite P7 5/5, embedding P8 768-d. **Plan B, `B_sprint`** again.
+- Spike re-run with the key: (e) real usage_metadata on gemini-3.5-flash-lite = (23, 2). (f) no longer bursts raw
+  calls past the limiter to provoke a 429 (project rule: every call through the limiter).
+- Corpus: 10 docs generated + 2 CSVs, 3 PDFs rendered. check-facts flagged 3 extra numbers, none contradicting
+  facts.yaml (two true counts whitelisted in `.factignore`, one "Table 1" caption removed). Now 0 issues.
+- Ingest: 124 chunks from 12 documents. Gate passes (`how many sick leaves` -> leave_policy top 5; scores show the
+  keyword side matched nothing for this query, see DEEPDIVE 17 item 9).
+- `gen_eval_cases.py`: `data/eval/candidates.jsonl` with qa 22, unanswerable 6, action 12, multi 12.
+- **Next (human):** `uv run flightrec review-cases`. Then smoke eval (`eval --label smoke-1 --limit 3`).
+
 ## 2026-11-26: key added, first probe run, moving to another laptop
 
 ### State
