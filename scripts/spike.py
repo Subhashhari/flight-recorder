@@ -179,7 +179,13 @@ def e_roundtrip(real_model: str | None) -> str:
                 u = llm_response.usage_metadata
                 u_holder.append((u.prompt_token_count, u.candidates_token_count) if u else None)
 
-            agent = LlmAgent(name="spike", model=real_model, instruction="Answer in one word.", after_model_callback=am)
+            from flightrec.runtime import limiter
+
+            def bm_limit(callback_context, llm_request):  # every real call goes through the project limiter
+                limiter().acquire(llm_request.model, 600)
+
+            agent = LlmAgent(name="spike", model=real_model, instruction="Answer in one word.",
+                             before_model_callback=bm_limit, after_model_callback=am)
             asyncio.run(run(agent, "Say hello."))
             msg += f" Real model {real_model}: usage_metadata (prompt, candidates) = {u_holder[0]}."
         except Exception as ex:  # noqa: BLE001
@@ -190,19 +196,12 @@ def e_roundtrip(real_model: str | None) -> str:
 
 
 def f_rate_limit(judge: str | None) -> str:
-    if not judge:
-        return "pending: needs API key and JUDGE_MODEL (default match `429|RESOURCE_EXHAUSTED|quota` used meanwhile)."
-    from google import genai
-    client = genai.Client()
-    for i in range(30):
-        try:
-            client.models.generate_content(model=judge, contents="Reply: ok")
-        except Exception as ex:  # noqa: BLE001
-            mro = " > ".join(c.__name__ for c in type(ex).__mro__[:4])
-            return (f"After {i + 1} rapid calls on {judge}: {type(ex).__module__}.{type(ex).__name__} ({mro}); "
-                    f"str = {str(ex)[:300]!r}; code attr = {getattr(ex, 'code', None)}. Matched by executor regex "
-                    "`429|RESOURCE_EXHAUSTED|quota`.")
-    return f"not reproduced in 30 calls on {judge}; using default match `429|RESOURCE_EXHAUSTED|quota`."
+    # Deliberately NOT provoked: bursting raw calls past the limiter to force a 429 would break the project rule
+    # that every model call goes through Limiter.acquire(), and would spend daily quota the limiter cannot see.
+    # The executor matches `429|RESOURCE_EXHAUSTED|quota` across the exception chain (unit-tested); any real 429
+    # that does occur is stored in the run's totals.outputs.error, where its exact text can be read.
+    return ("not provoked by design (no limiter bypass). Executor matches `429|RESOURCE_EXHAUSTED|quota` over the "
+            "whole exception chain; real 429 text, if one ever occurs, is kept in the run's stored error.")
 
 
 def g_dummy_key() -> str:

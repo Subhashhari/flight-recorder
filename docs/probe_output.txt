@@ -14,8 +14,9 @@ probing Gemma 4 31B = gemma-4-31b-it (P1-P6)
   transient server error; retrying in 60 s
   transient server error; retrying in 120 s
 {
- "P1": true,
- "P4": true,
+ "P1": false,
+ "P4": false,
+ "P1_error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
  "P2": false,
  "P2_error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
  "probe_attempts": 4,
@@ -30,7 +31,8 @@ probing Gemma 4 26B = gemma-4-26b-a4b-it (P1-P6)
  "P1": false,
  "P4": false,
  "P1_error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
- "P2": true,
+ "P2": false,
+ "P2_error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
  "probe_attempts": 4,
  "passes_agent": false
 }
@@ -46,7 +48,7 @@ probing Gemini 3.5 Flash Lite = gemini-3.5-flash-lite (P1-P6)
  "P5_samples": [
   "needs_policy=yes; needs_action=yes; employee_id=E1003; task=The employee wants to know their annual sick leave entitlement.",
   "needs_policy=no; needs_action=yes; employee_id=E1012; task=The employee wants to check their current leave balance.",
-  "needs_policy=no; needs_action=yes; employee_id=E1020; task=The employee wants to raise an IT ticket because their laptop screen is cracked.",
+  "needs_policy=no; needs_action=yes; employee_id=E1020; task=The employee wants to raise an IT support ticket for a cracked laptop screen.",
   "needs_policy=yes; needs_action=yes; employee_id=E1007; task=The employee wants to know their meal limit and file an expense claim of Rs 900 for dinner.",
   "needs_policy=yes; needs_action=no; employee_id=E1031; task=The employee wants to know if they are allowed to work from home on Fridays according to company poli"
  ],

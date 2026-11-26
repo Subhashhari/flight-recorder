@@ -1,6 +1,6 @@
 # Quota log
 
-## Model probe (2026-11-26T23:14)
+## Model probe (2026-11-26T23:55)
 
 Console quotas (AI Studio rate-limit page, read 2026-11-18):
 
@@ -17,8 +17,9 @@ Console quotas (AI Studio rate-limit page, read 2026-11-18):
 ```json
 {
  "Gemma 4 31B": {
-  "P1": true,
-  "P4": true,
+  "P1": false,
+  "P4": false,
+  "P1_error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
   "P2": false,
   "P2_error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
   "probe_attempts": 4,
@@ -28,7 +29,8 @@ Console quotas (AI Studio rate-limit page, read 2026-11-18):
   "P1": false,
   "P4": false,
   "P1_error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
-  "P2": true,
+  "P2": false,
+  "P2_error": "ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}",
   "probe_attempts": 4,
   "passes_agent": false
  },
@@ -42,7 +44,7 @@ Console quotas (AI Studio rate-limit page, read 2026-11-18):
   "P5_samples": [
    "needs_policy=yes; needs_action=yes; employee_id=E1003; task=The employee wants to know their annual sick leave entitlement.",
    "needs_policy=no; needs_action=yes; employee_id=E1012; task=The employee wants to check their current leave balance.",
-   "needs_policy=no; needs_action=yes; employee_id=E1020; task=The employee wants to raise an IT ticket because their laptop screen is cracked.",
+   "needs_policy=no; needs_action=yes; employee_id=E1020; task=The employee wants to raise an IT support ticket for a cracked laptop screen.",
    "needs_policy=yes; needs_action=yes; employee_id=E1007; task=The employee wants to know their meal limit and file an expense claim of Rs 900 for dinner.",
    "needs_policy=yes; needs_action=no; employee_id=E1031; task=The employee wants to know if they are allowed to work from home on Fridays according to company poli"
   ],
