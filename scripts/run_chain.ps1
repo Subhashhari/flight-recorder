@@ -7,6 +7,10 @@ Set-Location (Split-Path $PSScriptRoot -Parent)
 $env:Path = "$env:LOCALAPPDATA\Microsoft\WinGet\Links;$env:Path"
 $env:PYTHONIOENCODING = "utf-8"
 New-Item -ItemType Directory -Force logs | Out-Null
+
+# one chain at a time (scheduled task + a manual run would race on the same cases)
+$mutex = New-Object System.Threading.Mutex($false, "Global\FlightRecorderChain")
+if (-not $mutex.WaitOne(0)) { "another run_chain.ps1 is already running; exiting"; exit 0 }
 $log = "logs\chain.log"
 
 # keep the machine awake (not the display) while this process runs; released automatically when it exits
@@ -36,3 +40,5 @@ Step "replay-check"       @("run", "flightrec", "replay-check", "--label", "base
 Step "stats"              @("run", "flightrec", "stats")
 Step "report"             @("run", "flightrec", "report")
 "===== $(Get-Date -Format 'yyyy-MM-dd HH:mm') CHAIN COMPLETE. Next (human): uv run flightrec label" | Tee-Object -FilePath $log -Append
+# the scheduled task (scripts/schedule_chain.ps1) is only needed until the chain completes
+Unregister-ScheduledTask -TaskName "FlightRecorderChain" -Confirm:$false -ErrorAction SilentlyContinue
