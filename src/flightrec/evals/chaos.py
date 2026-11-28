@@ -11,7 +11,7 @@ from flightrec.config import load_scale
 from flightrec.evals.cases import Case, load_cases
 from flightrec.evals.judge import judge_chaos
 from flightrec.evals.metrics import FAILURE_CATEGORIES, failure_category
-from flightrec.evals.runner import handle_quota
+from flightrec.evals.runner import handle_quota, score_patiently
 from flightrec.recorder import store
 from flightrec.recorder.faults import FAULT_NAMES, FAULTS
 from flightrec.recorder.ratelimit import QuotaExhausted
@@ -75,7 +75,7 @@ async def _run(label: str, work: list[tuple[str, Case]], resume: bool, wait: boo
                 continue
             unscored = [r for r in prior if r["status"] in store.COUNTED and r.get("passed") is None]
             if resume and unscored:
-                score_chaos_run(case, unscored[-1], store.get_events(unscored[-1]["run_id"]), fault)
+                score_patiently(score_chaos_run, case, unscored[-1], store.get_events(unscored[-1]["run_id"]), fault)
                 i += 1
                 continue
             res = await execute(case.query, case.employee_id, mode="chaos", fault=fault, label=label,
@@ -83,8 +83,9 @@ async def _run(label: str, work: list[tuple[str, Case]], resume: bool, wait: boo
             ran += 1
             msg = f"[{i + 1}/{len(work)}] {fault} {case.id} {res.status}"
             if res.status in store.COUNTED:
-                m = score_chaos_run(case, res.row(), res.events, fault)
-                msg += f" -> {m['failure_category'] or 'survived'}" + ("" if m["fault_fired"] else " (fault not fired)")
+                m = score_patiently(score_chaos_run, case, res.row(), res.events, fault)
+                msg += (f" -> {m['failure_category'] or 'survived'}" + ("" if m["fault_fired"] else " (fault not fired)")) \
+                    if m else " -> unscored (judge unavailable)"
             console.print(msg)
             i += 1
         except QuotaExhausted as q:

@@ -1380,6 +1380,20 @@ Integration tests took 4.5 minutes. Timing raw connections showed `localhost` st
 - **Side benefit:** this is the real free-tier 429 text that spike (f) used to provoke by bypassing the limiter; it is a
   `google.genai.errors.ClientError` whose text starts `429 RESOURCE_EXHAUSTED`, matched by the executor's regex.
 
+### 16.6 A judge outage stopped the whole chain (2026-11-28)
+
+- **Symptom:** `chaos-baseline-v1` exited with `ServerError: 503 UNAVAILABLE ... high demand` seven minutes after
+  resuming from the quota reset, at chaos run 31 of 48, and the unattended chain stopped.
+- **Cause:** the agent run had finished and was saved; the 503 came from the **judge** (`gemini-3.1-flash-lite`) while
+  scoring it. `llm._call` retried 30/60/120 s and then re-raised, and neither runner guarded the scoring call (the
+  agent side already turned such errors into `rate_limited`, section 9.2).
+- **Fix:** `score_patiently()` in `evals/runner.py` wraps scoring in both runners. On a transient server error or a
+  per-minute 429 from the judge it waits 5 minutes and retries, up to 2 hours; if the judge is still down, the run stays
+  stored **unscored** and the runner moves on. `--resume` already re-scores unscored runs without re-running the agent
+  (section 9.3), so nothing is lost or double-counted. `QuotaExhausted` and every other error still propagate. Unit
+  test: `test_score_patiently_rides_out_judge_outage_then_gives_up_cleanly`. `scripts/run_chain.ps1` also retries a
+  failed step twice, 15 minutes apart, before giving up.
+
 ---
 
 ## 17. Known limitations and open risks

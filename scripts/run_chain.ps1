@@ -18,13 +18,19 @@ Add-Type -Namespace Win32 -Name Power -MemberDefinition '[DllImport("kernel32.dl
 [Win32.Power]::SetThreadExecutionState(0x80000001) | Out-Null   # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
 
 function Step([string]$name, [string[]]$cmd) {
-    "`n===== $(Get-Date -Format 'yyyy-MM-dd HH:mm') START $name : uv $($cmd -join ' ')" | Tee-Object -FilePath $log -Append
-    & uv @cmd 2>&1 | ForEach-Object { "$_" } | Tee-Object -FilePath $log -Append
-    if ($LASTEXITCODE -ne 0) {
-        "===== $(Get-Date -Format 'yyyy-MM-dd HH:mm') FAILED $name (exit $LASTEXITCODE); fix and re-run this script" | Tee-Object -FilePath $log -Append
-        exit $LASTEXITCODE
+    # every step is resumable, so a failed step is retried (after 15 min) before the chain gives up
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        "`n===== $(Get-Date -Format 'yyyy-MM-dd HH:mm') START $name (attempt $attempt/3) : uv $($cmd -join ' ')" | Tee-Object -FilePath $log -Append
+        & uv @cmd 2>&1 | ForEach-Object { "$_" } | Tee-Object -FilePath $log -Append
+        if ($LASTEXITCODE -eq 0) {
+            "===== $(Get-Date -Format 'yyyy-MM-dd HH:mm') DONE $name" | Tee-Object -FilePath $log -Append
+            return
+        }
+        "===== $(Get-Date -Format 'yyyy-MM-dd HH:mm') FAILED $name (exit $LASTEXITCODE, attempt $attempt/3)" | Tee-Object -FilePath $log -Append
+        if ($attempt -lt 3) { Start-Sleep -Seconds 900 }
     }
-    "===== $(Get-Date -Format 'yyyy-MM-dd HH:mm') DONE $name" | Tee-Object -FilePath $log -Append
+    "===== $(Get-Date -Format 'yyyy-MM-dd HH:mm') GAVE UP on $name; fix and re-run this script" | Tee-Object -FilePath $log -Append
+    exit 1
 }
 
 Step "baseline-v1"        @("run", "flightrec", "eval", "--label", "baseline-v1", "--resume", "--wait")

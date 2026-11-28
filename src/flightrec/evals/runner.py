@@ -36,6 +36,37 @@ def handle_quota(q: QuotaExhausted, wait: bool) -> bool:
     return True
 
 
+JUDGE_OUTAGE_WAIT_S = 300   # between scoring attempts while the judge model is overloaded
+JUDGE_OUTAGE_TRIES = 25     # 24 waits = 2 h; llm._call already retried 30/60/120 s inside each attempt
+
+
+def score_patiently(score_fn, *args, wait_s: float = JUDGE_OUTAGE_WAIT_S, tries: int = JUDGE_OUTAGE_TRIES,
+                    sleep=time.sleep):
+    """Score a stored run; ride out judge outages instead of crashing the whole runner.
+
+    A transient server error (503 "high demand", 5xx) or a per-minute 429 from the *judge* is not a property of the
+    agent run, which is already saved. Wait and retry; if the judge stays down, return None and leave the run unscored:
+    `--resume` re-scores unscored runs without re-running the agent. QuotaExhausted and any other error propagate.
+    """
+    from flightrec.agents.executor import is_rate_limit, is_transient
+    for k in range(tries):
+        try:
+            return score_fn(*args)
+        except QuotaExhausted:
+            raise
+        except Exception as e:  # noqa: BLE001
+            if not (is_transient(e) or is_rate_limit(e)):
+                raise
+            if k == tries - 1:
+                console.print(f"[yellow]judge still unavailable after {tries} attempts; run kept unscored "
+                              f"(re-scored on --resume): {type(e).__name__}[/yellow]")
+                return None
+            console.print(f"[yellow]judge unavailable ({type(e).__name__}); retry {k + 1}/{tries - 1} in "
+                          f"{wait_s / 60:.0f} min[/yellow]")
+            sleep(wait_s)
+    return None
+
+
 def score_clean_run(case: Case, run: dict, events: list[dict]) -> dict:
     status, final = run["status"], run.get("final_answer")
     actual = tool_calls(events)
@@ -80,8 +111,9 @@ async def _run(label: str, cases: list[Case], resume: bool, wait: bool, prompt_v
             unscored = [r for r in prior if r["status"] in store.COUNTED and r.get("passed") is None]
             if resume and unscored:
                 r = unscored[-1]
-                out = score_clean_run(case, r, store.get_events(r["run_id"]))
-                console.print(f"[{i + 1}/{len(cases)}] {case.id} re-scored passed={out['passed']}")
+                out = score_patiently(score_clean_run, case, r, store.get_events(r["run_id"]))
+                console.print(f"[{i + 1}/{len(cases)}] {case.id} "
+                              + (f"re-scored passed={out['passed']}" if out else "still unscored"))
                 i += 1
                 continue
             res = await execute(case.query, case.employee_id, label=label, case_id=case.id,
@@ -89,8 +121,9 @@ async def _run(label: str, cases: list[Case], resume: bool, wait: bool, prompt_v
             ran += 1
             msg = f"[{i + 1}/{len(cases)}] {case.id} {res.status} {res.totals['latency_ms'] / 1000:.1f}s"
             if res.status in store.COUNTED:
-                out = score_clean_run(case, res.row(), res.events)
-                msg += f" passed={out['passed']}" + (f" ({out['failure']})" if out["failure"] else "")
+                out = score_patiently(score_clean_run, case, res.row(), res.events)
+                msg += (f" passed={out['passed']}" + (f" ({out['failure']})" if out["failure"] else "")) if out \
+                    else " unscored (judge unavailable)"
             else:
                 msg += f" (not counted: {res.error})"
             console.print(msg)

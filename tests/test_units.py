@@ -250,3 +250,42 @@ def test_transient_server_errors_are_not_crashes():
     assert is_transient(wrapped)
     assert not is_transient(ValueError("expected 500 tokens, got 503"))
     assert not is_transient(KeyError("final"))
+
+
+# ---------------------------------------------------------------- judge outages do not crash a runner
+def test_score_patiently_rides_out_judge_outage_then_gives_up_cleanly():
+    import pytest
+
+    from flightrec.evals.runner import score_patiently
+    from flightrec.recorder.ratelimit import QuotaExhausted
+
+    class ServerError(Exception):
+        pass
+
+    slept, calls = [], []
+
+    def flaky(n_fail):
+        def fn(x):
+            calls.append(x)
+            if len(calls) <= n_fail:
+                raise ServerError("503 UNAVAILABLE. This model is currently experiencing high demand.")
+            return {"passed": True}
+        return fn
+
+    assert score_patiently(flaky(2), "r", wait_s=5, tries=4, sleep=slept.append) == {"passed": True}
+    assert slept == [5, 5] and len(calls) == 3
+    calls.clear(), slept.clear()
+    assert score_patiently(flaky(99), "r", wait_s=5, tries=3, sleep=slept.append) is None  # kept unscored
+    assert len(calls) == 3 and slept == [5, 5]
+
+    def broken(x):
+        raise KeyError("a real bug")
+    with pytest.raises(KeyError):  # non-transient errors still surface
+        score_patiently(broken, "r", sleep=slept.append)
+
+    import datetime as dt
+
+    def quota(x):
+        raise QuotaExhausted("m", dt.datetime(2026, 11, 29, tzinfo=dt.UTC))
+    with pytest.raises(QuotaExhausted):  # the runner handles quota itself
+        score_patiently(quota, "r", sleep=slept.append)
