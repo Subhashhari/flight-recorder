@@ -1,6 +1,6 @@
 # Progress
 
-## Current state (updated 2026-11-28 15:30 IST)
+## Current state (updated 2026-11-28 15:40 IST)
 
 The unattended chain `scripts/run_chain.ps1` is running (log: `logs/chain.log`, UTF-16; read with
 `Get-Content logs\chain.log -Tail 20`). Plan B: agent `gemini-3.5-flash-lite`, judge `gemini-3.1-flash-lite`,
@@ -11,8 +11,9 @@ embeddings `gemini-embedding-001`, tier `B_sprint` (40 cases).
 | 1-5 setup, probe, spike, corpus, check-facts, ingest, cases | done |
 | 6 smoke eval (`smoke-1`, 3 runs), `baseline-v1` (40 runs) | done |
 | 7 `eval-retrieval` hybrid + vector | done |
-| 7 `chaos-baseline-v1` (48 runs) | running (37/48 at 15:23) |
-| 7 `hardened-v2` (40), `chaos-hardened-v2` (48) | queued |
+| 7 `chaos-baseline-v1` (48 runs) | done 15:35 |
+| 7 `hardened-v2` (40) | running (started 15:35) |
+| 7 `chaos-hardened-v2` (48) | queued |
 | 8 diffs, `repeatability` (8 x 3), `replay-check` | queued |
 | 8 `label` (**human**, ~25 min), `judge-agreement` | after the chain |
 | 9 showcase runs, `report`, `export-static`, `export-traces`, README/SUMMARY numbers | after `label` |
@@ -27,6 +28,11 @@ Numbers so far, as printed by the commands (final figures come from `flightrec r
   hallucination rate 0.0 (n=25); p50 8.4 s, p95 31.1 s; 13,028 tokens/run; list-price $0.0047/run; 40 ok, 0 crash.
   All 3 multi failures: the claim is filed but the reply quotes the limit range instead of the employee's own limit.
 - `eval-retrieval`: hybrid recall@5 0.92, MRR 0.88; vector recall@5 0.92, MRR 0.86 (n=25).
+- `chaos --label chaos-baseline-v1` matrix (6 runs per fault, all faults fired; exploratory sample sizes): overall
+  survival 31/48 (65%), 7 distinct (fault, category) failure modes. tool_timeout 6/6 survived; tool_http_500 4/6
+  (2 ungraceful); tool_malformed_payload 3/6 (3 hallucinated_result); tool_empty_result 0/6 (6 hallucinated_result);
+  tool_missing_fields 2/6 (3 hallucinated_result, 1 ungraceful); retrieval_empty 5/6 (1 ungraceful);
+  retrieval_irrelevant 5/6 (1 ungraceful); retrieval_prompt_injection 6/6 (0 followed_injection).
 
 If the chain stops (reboot, VS Code closed, error): `powershell -ExecutionPolicy Bypass -File scripts\run_chain.ps1`
 continues where it stopped. `scripts\schedule_chain.ps1` (run by the human once) makes it a scheduled task that
