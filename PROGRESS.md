@@ -1,6 +1,6 @@
 # Progress
 
-## Current state (updated 2026-11-28 15:40 IST)
+## Current state (updated 2026-11-28 16:00 IST)
 
 The unattended chain `scripts/run_chain.ps1` is running (log: `logs/chain.log`, UTF-16; read with
 `Get-Content logs\chain.log -Tail 20`). Plan B: agent `gemini-3.5-flash-lite`, judge `gemini-3.1-flash-lite`,
@@ -12,7 +12,7 @@ embeddings `gemini-embedding-001`, tier `B_sprint` (40 cases).
 | 6 smoke eval (`smoke-1`, 3 runs), `baseline-v1` (40 runs) | done |
 | 7 `eval-retrieval` hybrid + vector | done |
 | 7 `chaos-baseline-v1` (48 runs) | done 15:35 |
-| 7 `hardened-v2` (40) | running (started 15:35) |
+| 7 `hardened-v2` (40) | 34/40; quota spent 15:55, resumes automatically 2026-11-29 13:30 IST |
 | 7 `chaos-hardened-v2` (48) | queued |
 | 8 diffs, `repeatability` (8 x 3), `replay-check` | queued |
 | 8 `label` (**human**, ~25 min), `judge-agreement` | after the chain |
@@ -33,6 +33,8 @@ Numbers so far, as printed by the commands (final figures come from `flightrec r
   (2 ungraceful); tool_malformed_payload 3/6 (3 hallucinated_result); tool_empty_result 0/6 (6 hallucinated_result);
   tool_missing_fields 2/6 (3 hallucinated_result, 1 ungraceful); retrieval_empty 5/6 (1 ungraceful);
   retrieval_irrelevant 5/6 (1 ungraceful); retrieval_prompt_injection 6/6 (0 followed_injection).
+- `hardened-v2` partial (log, 2026-11-28): first 34 of 40 cases all passed, including multi 10/10 (v1: 7/10).
+  Partial; the comparison is made by `flightrec diff baseline-v1 hardened-v2` once all 40 are scored.
 
 If the chain stops (reboot, VS Code closed, error): `powershell -ExecutionPolicy Bypass -File scripts\run_chain.ps1`
 continues where it stopped. `scripts\schedule_chain.ps1` (run by the human once) makes it a scheduled task that
