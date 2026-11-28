@@ -4,9 +4,11 @@ This document explains the whole project: what it is, how every part works, and 
 the alternatives**. It is written from the code as it stands, not from intentions. Where the code differs from the
 original specification (`docs/GUIDE.md`), the difference is called out and explained.
 
-- **Snapshot:** commit `e739d81` on `main`, 2026-11-25.
-- **Status in one line:** all code for all phases is written and passes its offline tests; nothing that needs the
-  Gemini API has been run yet, so there are no results. The [Results](#14-results) section is intentionally empty.
+- **Snapshot:** written from commit `e739d81` (2026-11-25); sections 11.2, 16.4-16.6 and 17 updated through
+  2026-11-28.
+- **Status in one line:** Plan B was chosen; corpus, eval set, baseline and retrieval evals are done, the chaos,
+  hardened and reproducibility runs are in progress (live status: `PROGRESS.md`). The [Results](#14-results) section
+  is filled only from `docs/results.md` once `flightrec report` has run.
 - **Companion docs:** `docs/GUIDE.md` (the original specification), `docs/architecture.md` (replay semantics and the
   verified ADK facts), `docs/feature-requests.md` (friction found), `docs/explained/` (a gentler, chapter-by-chapter
   explanation for readers new to agents).
@@ -1215,8 +1217,8 @@ truncates `chunks` and seeding truncates `employees`; running tests against the 
 
 ## 14. Results
 
-> **Intentionally empty.** Nothing that needs the Gemini API has been run. Every number below must come from the
-> command shown next to it, and `flightrec report` regenerates `docs/results.md` from stored runs.
+> **Still empty on purpose (2026-11-28).** Runs are in progress. These tables are filled in one pass from
+> `docs/results.md` after `flightrec report` has run; every number must come from the command shown next to it.
 
 **Run configuration**
 
@@ -1463,7 +1465,9 @@ open, and each says what to do about it.
 | `PROMPT_VERSION` | `v1` | `v1` baseline or `v2` hardened |
 | `FLIGHTREC_ROOT`, `UI_DIST` | unset | set in Docker: project root, built UI directory |
 
-Current machine state (2026-11-25): the key is empty, models and tier are `TBD`, the port is 5433.
+Current machine state (2026-11-28, second laptop): key set; `AGENT_MODEL=gemini-3.5-flash-lite`,
+`JUDGE_MODEL=gemini-3.1-flash-lite`, `EMBED_MODEL=gemini-embedding-001`, `SCALE_TIER=B_sprint` (written by the probe);
+port 5433.
 
 ### 18.2 Files
 

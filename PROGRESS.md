@@ -1,5 +1,40 @@
 # Progress
 
+## Current state (updated 2026-11-28 15:30 IST)
+
+The unattended chain `scripts/run_chain.ps1` is running (log: `logs/chain.log`, UTF-16; read with
+`Get-Content logs\chain.log -Tail 20`). Plan B: agent `gemini-3.5-flash-lite`, judge `gemini-3.1-flash-lite`,
+embeddings `gemini-embedding-001`, tier `B_sprint` (40 cases).
+
+| Step (DEEPDIVE 19) | Status |
+|---|---|
+| 1-5 setup, probe, spike, corpus, check-facts, ingest, cases | done |
+| 6 smoke eval (`smoke-1`, 3 runs), `baseline-v1` (40 runs) | done |
+| 7 `eval-retrieval` hybrid + vector | done |
+| 7 `chaos-baseline-v1` (48 runs) | running (37/48 at 15:23) |
+| 7 `hardened-v2` (40), `chaos-hardened-v2` (48) | queued |
+| 8 diffs, `repeatability` (8 x 3), `replay-check` | queued |
+| 8 `label` (**human**, ~25 min), `judge-agreement` | after the chain |
+| 9 showcase runs, `report`, `export-static`, `export-traces`, README/SUMMARY numbers | after `label` |
+| 10 GitHub Pages, demo video, rotate the key (**human**) | last |
+
+Measured (stored runs, 2026-11-28): 7.4 LLM calls per clean run, 9.1 per chaos run; 450 usable agent calls per quota
+day (reset 13:30 IST). Remaining ~1,020 agent calls -> chain expected to finish Mon 2026-11-30 evening IST, later if
+Gemini has long 503 outages.
+
+Numbers so far, as printed by the commands (final figures come from `flightrec report`, not from here):
+- `eval --label baseline-v1`: 40 cases, success 0.925; qa 15/15, unanswerable 5/5, action 10/10, multi 7/10;
+  hallucination rate 0.0 (n=25); p50 8.4 s, p95 31.1 s; 13,028 tokens/run; list-price $0.0047/run; 40 ok, 0 crash.
+  All 3 multi failures: the claim is filed but the reply quotes the limit range instead of the employee's own limit.
+- `eval-retrieval`: hybrid recall@5 0.92, MRR 0.88; vector recall@5 0.92, MRR 0.86 (n=25).
+
+If the chain stops (reboot, VS Code closed, error): `powershell -ExecutionPolicy Bypass -File scripts\run_chain.ps1`
+continues where it stopped. `scripts\schedule_chain.ps1` (run by the human once) makes it a scheduled task that
+survives VS Code exits and restarts at logon.
+
+Incidents: 2026-11-27 00:50 the chain process died with no error (most likely killed with its parent VS Code process
+tree); resumed 15:10. 2026-11-28 13:37 a judge 503 stopped it (DEEPDIVE 16.6, fixed); resumed 15:19.
+
 ## 2026-11-26 (evening, new laptop): probe, spike, corpus, ingest, candidates done
 
 - New laptop set up: uv 0.13.10 installed, `uv sync`, Docker DB on host port 5433 (from `.env`), `db-init`, 40
